@@ -123,6 +123,8 @@ if __name__ == '__main__':
     print json.dumps(json_response, indent=4)
 
 
+    #   ben's awesome strategy here
+    
     # now = datetime.datetime.now()
     # delta = datetime.timedelta(days=1)
     #
