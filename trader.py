@@ -1,14 +1,34 @@
 import requests
 import os
+import json
+
+class gdax_interface:
+    def __init__(self):
+        self.url = 'https://api.gdax.com'
+        self.product_id = 'LTC-USD'
+
+    def get(self, path):
+        response = requests.get(self.url + path)
+
+        return response.json()
+
+    def get_products(self):
+        return self.get('/products')
+
+    def get_order_book(self, level = False):
+
+        request_url = '/products/' + self.product_id + '/book'
+        if level:
+            request_url += '?level=' + str(level)
+
+        return self.get(request_url)
+
+
 
 if __name__ == '__main__':
-    print 'sup'
-
-
     script_dir = os.path.dirname(os.path.realpath(__file__))
 
-    output_dir = os.path.join(script_dir, 'request.html')
+    gdax = gdax_interface()
+    json_out = gdax.get_order_book(level=2)
 
-    response = requests.get('https://api.gdax.com/products')
-
-    print(response.json())
+    print json.dumps(json_out, indent=4)
