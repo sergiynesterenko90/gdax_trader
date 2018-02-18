@@ -1,12 +1,14 @@
-import gdax
-
+import requests
+import os
 
 if __name__ == '__main__':
     print 'sup'
 
-    public_client = gdax.PublicClient()
 
-    ltcousd = public_client.get_product_historic_rates('LTC-USD', granularity='60')
-    ltcoeur = public_client.get_product_historic_rates('LTC-EUR', granularity='60')
+    script_dir = os.path.dirname(os.path.realpath(__file__))
 
-    print ltcousd
+    output_dir = os.path.join(script_dir, 'request.html')
+
+    response = requests.get('https://api.gdax.com/products')
+
+    print(response.json())
