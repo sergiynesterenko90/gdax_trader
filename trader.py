@@ -58,6 +58,20 @@ class gdax_interface:
         plt.show()
 
 
+    def post_limit_order(self, type, side, price, size, post_only = True):
+
+        request_url = '/orders/?'
+        request_url += 'client_oid=' + str(self.client_oid)
+        request_url += '?type=' + str('limit')
+        request_url += '?side=' + str(side)
+        request_url += '?product_id=' + str(self.proudct_id)
+        request_url += '?price=' + str(price)
+        request_url += '?size=' + str(size)
+        request_url += '?post_only=True'
+
+        return self.post
+
+
 
 
 
