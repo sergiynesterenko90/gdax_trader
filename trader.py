@@ -4,13 +4,51 @@ import json
 import datetime
 import matplotlib.pyplot as plt
 
+import private
+
+import hmac, hashlib, time, requests, base64
+from requests.auth import AuthBase
+
+# Create custom authentication for Exchange
+class CoinbaseExchangeAuth(AuthBase):
+    def __init__(self, api_key, secret_key, passphrase):
+        self.api_key = api_key
+        self.secret_key = secret_key
+        self.passphrase = passphrase
+
+    def __call__(self, request):
+        timestamp = str(time.time())
+        message = timestamp + request.method + request.path_url + (request.body or '')
+        hmac_key = base64.b64decode(self.secret_key)
+        signature = hmac.new(hmac_key, message, hashlib.sha256)
+        signature_b64 = signature.digest().encode('base64').rstrip('\n')
+
+        request.headers.update({
+            'CB-ACCESS-SIGN': signature_b64,
+            'CB-ACCESS-TIMESTAMP': timestamp,
+            'CB-ACCESS-KEY': self.api_key,
+            'CB-ACCESS-PASSPHRASE': self.passphrase,
+            'Content-Type': 'application/json'
+        })
+        return request
+
+
 class gdax_interface:
     def __init__(self):
         self.url = 'https://api.gdax.com'
         self.product_id = 'LTC-USD'
 
+    def set_product_id(self, id):
+        self.product_id = id
+
     def get(self, path):
         response = requests.get(self.url + path)
+
+        return response.json()
+
+    def post(self, path, content, auth=False):
+        # response = requests.post(self.url + path, auth=auth)
+        response = requests.post(self.url + '/orders', json=content, auth=auth)
 
         return response.json()
 
@@ -58,38 +96,39 @@ class gdax_interface:
         plt.show()
 
 
-    def post_limit_order(self, type, side, price, size, post_only = True):
+    def post_limit_order(self, side, price, size):
 
-        request_url = '/orders/?'
-        request_url += 'client_oid=' + str(self.client_oid)
-        request_url += '?type=' + str('limit')
-        request_url += '?side=' + str(side)
-        request_url += '?product_id=' + str(self.proudct_id)
-        request_url += '?price=' + str(price)
-        request_url += '?size=' + str(size)
-        request_url += '?post_only=True'
+        key, secret, auth_pass = private.get_auth()
+        auth = CoinbaseExchangeAuth(key, secret, auth_pass)
 
-        return self.post
+        order = {
+            'size': size,
+            'price': price,
+            'side': side,
+            'product_id': 'BTC-USD',
+        }
 
-
-
-
+        return self.post('/orders', order, auth=auth)
 
 
 if __name__ == '__main__':
     script_dir = os.path.dirname(os.path.realpath(__file__))
 
     gdax = gdax_interface()
-    # json_out = gdax.get_order_book(level=2)
 
-    now = datetime.datetime.now()
-    delta = datetime.timedelta(days=1)
+    gdax.set_product_id('BTC-USD')
 
-    start = (now - delta).isoformat()
-    stop = now.isoformat()
+    json_response = gdax.post_limit_order('sell', 100000, 0.002)
 
-    json_response = gdax.get_historic_rates(start,stop)
+    print json.dumps(json_response, indent=4)
 
-    gdax.plot_historic_rates(json_response)
 
-    # print json.dumps(json_out, indent=4)
+    # now = datetime.datetime.now()
+    # delta = datetime.timedelta(days=1)
+    #
+    # start = (now - delta).isoformat()
+    # stop = now.isoformat()
+    #
+    # json_response = gdax.get_historic_rates(start,stop)
+    #
+    # gdax.plot_historic_rates(json_response)
